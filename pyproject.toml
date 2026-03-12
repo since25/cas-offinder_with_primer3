@@ -22,3 +22,4 @@ dependencies = [
 
 [project.scripts]
 otp = "otp.pipeline:main"
+otp-redesign = "otp.redesign:main"

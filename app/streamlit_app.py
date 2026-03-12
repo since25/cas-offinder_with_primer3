@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 st.set_page_config(page_title="Cas-OFFinder V2 Designer", layout="wide")
@@ -42,7 +43,7 @@ if run_button:
         out_dir = Path("runs") / run_name
         
         cmd = [
-            "python", "-m", "otp.pipeline",
+            sys.executable, "-m", "otp.pipeline",
             "--out", str(out_dir),
             "--flank", str(flank_len),
             "--amplicon_min", str(amplicon_min),
@@ -101,3 +102,6 @@ if run_button:
         except subprocess.CalledProcessError as e:
             st.error(f"Command failed with exit code {e.returncode}")
             st.code(e.stderr)
+        except FileNotFoundError as e:
+            st.error("Python interpreter was not found for the pipeline subprocess.")
+            st.code(str(e))
