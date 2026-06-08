@@ -6,6 +6,7 @@
 ## 🌟 核心特性
 
 - **多核并行与 GPU 加速**：支持多线程查表，如果有 OpenCL 环境，Cas-OFFinder 可自动开启 GPU 计算。
+- **多物种参考基因组**：支持人 `hg38`、小鼠 `mm39`、大鼠 `rn7 / GRCr8`、食蟹猴 `Macaca_fascicularis (Macaca_fascicularis_6.0)` 四种模式。
 - **Cas-OFFinder V3 支持**：除常规错配（Mismatches）外，支持最新的 **DNA 凸起 (DNA Bulge)** 和 **RNA 凸起 (RNA Bulge)** 容错检索。
 - **靶向引物智能设计**：针对每个脱靶位点自动提取上游和下游侧翼序列，规避靶点区域 (额外 20bp 缓冲)，动态设计最优的扩增引物，并支持失败后的降级策略（放宽 Tm/GC 条件）。
 - **Docker 极速部署**：提供高度精简的 Docker 环境，只需克隆代码即可拥有所有底层编译好的环境。
@@ -23,9 +24,10 @@ offtarget_primer_tool/
 ├── app/
 │   └── streamlit_app.py   # Streamlit 网页端入口
 ├── data/
-│   └── hg38/
-│       ├── hg38.fa            # (需自行准备) 人类参考基因组 FASTA
-│       └── annotation.gtf.gz  # (需自行准备) 基因注释文件
+│   ├── hg38/
+│   ├── mm39/
+│   ├── rn7/
+│   └── Macaca_fascicularis/
 ├── runs/
 │   └── .cache/            # (自动生成) 历史查询缓存数据
 └── src/
@@ -34,12 +36,48 @@ offtarget_primer_tool/
 
 ## 🛠 数据准备
 
-为了使系统正常运行，您需要准备 hg38 基因组数据：
-1. 下载 `hg38.fa` 并放入 `data/hg38/` 目录。
-2. 生成或准备 `hg38.fa.fai` 索引文件。
-3. (可选) 下载 GTF 基因注释文件并放入 `data/hg38/`，用于后续注释。
+为了使系统正常运行，您需要为对应物种准备 FASTA、FASTA 索引和可选 GTF 注释文件。
 
-推荐目录结构：
+支持的物种目录：
+
+```text
+data/
+├── hg38/
+│   ├── hg38.fa
+│   ├── hg38.fa.fai
+│   └── annotation.sorted.gtf.gz
+├── mm39/
+│   ├── mm39.fa
+│   ├── mm39.fa.fai
+│   └── annotation.sorted.gtf.gz
+├── rn7/
+│   ├── rn7.fa
+│   ├── rn7.fa.fai
+│   └── annotation.sorted.gtf.gz
+└── Macaca_fascicularis/
+    ├── Macaca_fascicularis.fa
+    ├── Macaca_fascicularis.fa.fai
+    └── annotation.sorted.gtf.gz
+```
+
+推荐直接使用项目脚本下载：
+
+```bash
+source .venv/bin/activate
+python scripts/download_genomes.py --genome hg38
+python scripts/download_genomes.py --genome mm39
+python scripts/download_genomes.py --genome rn7
+python scripts/download_genomes.py --genome macaca_fascicularis
+```
+
+也可以一次下载全部：
+
+```bash
+source .venv/bin/activate
+python scripts/download_genomes.py --genome all
+```
+
+### 手工准备 hg38 数据
 
 ```text
 data/
@@ -164,9 +202,11 @@ streamlit run app/streamlit_app.py
 ```
 
 默认参数说明：
+- `Genome` 可选择 `Human (hg38)`、`Mouse (mm39)`、`Rat (rn7 / GRCr8)`、`Macaca_fascicularis`
 - `Flank Length` 默认 `500`，表示脱靶位点上下游各截取 `500 bp`
 - Primer3 在目标区域两侧还会额外避让 `20 bp`
 - Streamlit 内部会自动复用当前 Python 解释器调用 `otp.pipeline`
+- 页面左侧可切换到 `使用指南`，直接在 Web 页面中阅读本 README。
 
 ### 2. 命令行批量模式：从 sgRNA 参数表开始跑全流程
 适合输入是“待搜索参数表”，也就是还没有 Cas-OFFinder 结果，需要从 sgRNA/PAM/mismatch 开始做全流程搜索和引物设计。
@@ -178,6 +218,14 @@ source .venv/bin/activate
 python -m otp.pipeline --batch input.xlsx --out runs/batch_run --threads 8
 ```
 
+指定物种：
+
+```bash
+python -m otp.pipeline --genome mm39 --batch input.xlsx --out runs/mouse_batch --threads 8
+python -m otp.pipeline --genome rn7 --batch input.xlsx --out runs/rat_batch --threads 8
+python -m otp.pipeline --genome macaca_fascicularis --batch input.xlsx --out runs/macaca_batch --threads 8
+```
+
 批量输入表至少应包含：
 - `spacer`
 - 可选：`pam`, `mismatches`, `dna_bulge`, `rna_bulge`, `flank`, `amplicon_min`, `amplicon_max`
@@ -187,6 +235,7 @@ python -m otp.pipeline --batch input.xlsx --out runs/batch_run --threads 8
 ```bash
 source .venv/bin/activate
 python -m otp.pipeline \
+  --genome hg38 \
   --spacer GAGTCCGAGCAGAAGAAGA \
   --pam NGG \
   --mismatches 3 \
@@ -201,6 +250,7 @@ python -m otp.pipeline \
 ```bash
 source .venv/bin/activate
 python -m otp.redesign \
+  --genome hg38 \
   --input your_offtargets.xlsx \
   --out runs/your_offtargets_redesign
 ```

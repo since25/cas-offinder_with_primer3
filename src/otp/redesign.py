@@ -6,6 +6,7 @@ import pandas as pd
 from .pipeline import process_single_row
 from .primer import PrimerDesigner
 from .report import ExportManager
+from .genomes import GENOME_PROFILES, get_genome_profile
 
 
 REQUIRED_COLUMNS = [
@@ -51,7 +52,9 @@ def redesign_from_table(
     flank: int = 500,
     amplicon_min: int = 150,
     amplicon_max: int = 250,
+    genome_profile=None,
 ) -> pd.DataFrame:
+    genome_profile = get_genome_profile(genome_profile)
     in_path = Path(input_path)
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -75,12 +78,13 @@ def redesign_from_table(
                 designer=designer,
                 amplicon_min=amplicon_min,
                 amplicon_max=amplicon_max,
+                genome_profile=genome_profile,
             )
         )
 
     final_df = pd.DataFrame(results)
     final_df.to_csv(out_path / "results.csv", index=False)
-    ExportManager.export_excel(final_df, str(out_path / "results.xlsx"))
+    ExportManager.export_excel(final_df, str(out_path / "results.xlsx"), genome_profile=genome_profile)
     return final_df
 
 
@@ -93,6 +97,7 @@ def main():
     parser.add_argument("--flank", type=int, default=500, help="Flanking sequence length for primer design")
     parser.add_argument("--amplicon_min", type=int, default=150, help="Min amplicon length")
     parser.add_argument("--amplicon_max", type=int, default=250, help="Max amplicon length")
+    parser.add_argument("--genome", type=str, default="hg38", choices=GENOME_PROFILES.keys(), help="Genome profile")
     args = parser.parse_args()
 
     final_df = redesign_from_table(
@@ -101,6 +106,7 @@ def main():
         flank=args.flank,
         amplicon_min=args.amplicon_min,
         amplicon_max=args.amplicon_max,
+        genome_profile=args.genome,
     )
     primers_found = int((final_df.get("covers_offtarget", pd.Series(dtype=bool)) == True).sum())
     print(f"Processed {len(final_df)} rows; primers found for {primers_found} rows.")

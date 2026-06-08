@@ -9,14 +9,14 @@ class ExportManager:
     ]
 
     @staticmethod
-    def _build_legacy_primer_sheet(df: pd.DataFrame) -> pd.DataFrame:
+    def _build_legacy_primer_sheet(df: pd.DataFrame, genome_profile=None) -> pd.DataFrame:
         """
         Build a compatibility sheet matching the legacy Excel field layout.
         """
         if df.empty:
             return pd.DataFrame(columns=ExportManager.LEGACY_COLUMNS)
 
-        genome = Genome()
+        genome = Genome(profile=genome_profile) if genome_profile is not None else Genome()
         legacy_rows = []
 
         for idx, row in df.reset_index(drop=True).iterrows():
@@ -68,7 +68,7 @@ class ExportManager:
         return pd.DataFrame(legacy_rows, columns=ExportManager.LEGACY_COLUMNS)
 
     @staticmethod
-    def export_excel(df: pd.DataFrame, out_path: str):
+    def export_excel(df: pd.DataFrame, out_path: str, genome_profile=None):
         """
         Export to results.xlsx with multiple sheets: offtargets, primers, summary.
         """
@@ -110,7 +110,7 @@ class ExportManager:
             "Primers Found": len(df[df.get("covers_offtarget", False) == True])
         }
         df_sum = pd.DataFrame(list(summary.items()), columns=["Metric", "Value"])
-        df_legacy = ExportManager._build_legacy_primer_sheet(df)
+        df_legacy = ExportManager._build_legacy_primer_sheet(df, genome_profile=genome_profile)
         
         with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
             df_off.to_excel(writer, sheet_name="offtargets", index=False)
