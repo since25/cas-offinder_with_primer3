@@ -24,6 +24,8 @@ class ExportManager:
             pos0 = row.get("pos0")
             target_len = int(row.get("target_len", 20) or 20)
             query_id = str(row.get("query_id", "query"))
+            ot_no = row.get("ot_no")
+            display_id = str(ot_no) if pd.notna(ot_no) and str(ot_no).strip() else query_id
             record_no = f"{idx + 1:02d}"
 
             legacy_start0 = max(0, int(pos0) - 1000)
@@ -53,11 +55,11 @@ class ExportManager:
 
             legacy_rows.append({
                 "Unnamed: 0": None,
-                "OT位点编号": f"{record_no} {query_id} {chrom} {legacy_start0} {legacy_end0}",
-                "正向引物名称": f"{record_no} {query_id} F",
+                "OT位点编号": f"{record_no} {display_id} {chrom} {legacy_start0} {legacy_end0}",
+                "正向引物名称": f"{record_no} {display_id} F",
                 "正向序列": left_seq,
                 "正向引物结合位点": left_site,
-                "反向引物名称": f"{record_no} {query_id} R",
+                "反向引物名称": f"{record_no} {display_id} R",
                 "反向序列": right_seq,
                 "反向引物结合位点": right_site,
                 "扩增长度": row.get("amplicon_size"),
@@ -78,14 +80,14 @@ class ExportManager:
         # We assume df has all merged data.
         # Split fields based on rules
         offtarget_cols = [
-            'query_id', 'spacer', 'pam', 'chrom', 'pos0', 'pos1', 'strand',
+            'query_id', 'ot_no', 'spacer', 'pam', 'chrom', 'pos0', 'pos1', 'strand',
             'mismatches', 'bulge_type', 'bulge_size', 'found_seq', 'query_seq',
             'target_len', 'flank_start0', 'flank_end0', 'offtarget_pos_in_flank0',
             'rank_score', 'rank_reason', 'gene_id', 'gene_name', 'feature', 'distance_to_gene'
         ]
         
         primer_cols = [
-            'query_id', 'chrom', 'pos0', 'strand', 'mismatches', 'bulge_type', 'bulge_size',
+            'query_id', 'ot_no', 'chrom', 'pos0', 'strand', 'mismatches', 'bulge_type', 'bulge_size',
             'primer_left_seq', 'primer_right_seq', 'primer_left_tm', 'primer_right_tm',
             'primer_left_pos_in_flank0', 'primer_left_len',
             'primer_right_pos_in_flank0', 'primer_right_len',

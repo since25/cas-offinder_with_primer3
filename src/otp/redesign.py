@@ -29,8 +29,10 @@ def _validate_input_columns(df: pd.DataFrame) -> None:
 def _map_input_row(row: pd.Series, query_id: str) -> pd.Series:
     crna = str(row["crRNA"])
     dna = str(row["DNA"])
+    ot_no = row.get("OT-No.", row.get("OT-No", row.get("Id")))
     return pd.Series({
         "query_id": query_id,
+        "ot_no": ot_no,
         "spacer": crna[:-3],
         "pam": crna[-3:],
         "chrom": row["Chromosome"],

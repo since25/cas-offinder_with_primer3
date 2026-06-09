@@ -57,3 +57,42 @@ def test_export_excel_includes_legacy_sheet(tmp_path, monkeypatch):
     assert legacy.loc[0, "扩增长度"] == 71
     assert len(legacy.loc[0, "扩增子序列"]) == 71
     assert len(legacy.loc[0, "位点上下游1000bp序列"]) == 1120
+
+
+def test_export_excel_preserves_original_ot_number(tmp_path, monkeypatch):
+    monkeypatch.setattr(report, "Genome", FakeGenome)
+
+    df = pd.DataFrame([
+        {
+            "query_id": "existing_ot_input",
+            "ot_no": "mm10-AG9-OT01",
+            "chrom": "chr1",
+            "pos0": 100,
+            "target_len": 20,
+            "strand": "+",
+            "mismatches": 4,
+            "bulge_type": "X",
+            "bulge_size": 0,
+            "found_seq": "A" * 20,
+            "query_seq": "C" * 23,
+            "primer_left_seq": "ACGTACGTACGTACGTACGT",
+            "primer_right_seq": "TGCATGCATGCATGCATGCA",
+            "primer_left_genome0": 80,
+            "primer_right_genome0": 150,
+            "amplicon_size": 71,
+            "covers_offtarget": True,
+        }
+    ])
+
+    out_path = tmp_path / "results.xlsx"
+    ExportManager.export_excel(df, str(out_path))
+
+    offtargets = pd.read_excel(out_path, sheet_name="offtargets")
+    primers = pd.read_excel(out_path, sheet_name="primers")
+    legacy = pd.read_excel(out_path, sheet_name="legacy_primers")
+
+    assert offtargets.loc[0, "ot_no"] == "mm10-AG9-OT01"
+    assert primers.loc[0, "ot_no"] == "mm10-AG9-OT01"
+    assert legacy.loc[0, "OT位点编号"] == "01 mm10-AG9-OT01 chr1 0 1120"
+    assert legacy.loc[0, "正向引物名称"] == "01 mm10-AG9-OT01 F"
+    assert legacy.loc[0, "反向引物名称"] == "01 mm10-AG9-OT01 R"

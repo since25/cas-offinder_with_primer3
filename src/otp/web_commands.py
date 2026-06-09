@@ -4,6 +4,13 @@ from typing import Optional
 from .genomes import GenomeProfile
 
 
+def format_results_summary(input_mode: str, total_rows: int, primers_found: int | None = None) -> str:
+    if input_mode == "Existing OT Excel/CSV":
+        primer_text = f"; primers designed: {primers_found}" if primers_found is not None else ""
+        return f"Existing OT rows processed: {total_rows}{primer_text}"
+    return f"Results Summary: {total_rows} off-targets found"
+
+
 def _base_pipeline_args(
     python_executable: str,
     module: str,

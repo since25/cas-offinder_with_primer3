@@ -1,7 +1,11 @@
 from pathlib import Path
 
 from otp.genomes import get_genome_profile
-from otp.web_commands import build_pipeline_command, build_redesign_command
+from otp.web_commands import (
+    build_pipeline_command,
+    build_redesign_command,
+    format_results_summary,
+)
 
 
 def test_batch_pipeline_command_targets_cas_offinder_pipeline():
@@ -45,3 +49,14 @@ def test_existing_ot_command_targets_redesign_module():
     assert "--batch" not in cmd
     assert "--genome" in cmd
     assert cmd[cmd.index("--genome") + 1] == "mm10"
+
+
+def test_existing_ot_summary_describes_processed_rows_not_new_hits():
+    summary = format_results_summary(
+        input_mode="Existing OT Excel/CSV",
+        total_rows=319,
+        primers_found=319,
+    )
+
+    assert summary == "Existing OT rows processed: 319; primers designed: 319"
+    assert "off-targets found" not in summary

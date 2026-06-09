@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from otp.genomes import list_genome_profiles
-from otp.web_commands import build_pipeline_command, build_redesign_command
+from otp.web_commands import build_pipeline_command, build_redesign_command, format_results_summary
 
 st.set_page_config(page_title="Cas-OFFinder V2 Designer", layout="wide")
 
@@ -143,7 +143,10 @@ else:
                 results_csv = out_dir / "results.csv"
                 if results_csv.exists():
                     df_res = pd.read_csv(results_csv)
-                    st.subheader(f"Results Summary: {len(df_res)} off-targets found")
+                    primers_found = None
+                    if "covers_offtarget" in df_res.columns:
+                        primers_found = int(df_res["covers_offtarget"].astype(str).str.upper().eq("TRUE").sum())
+                    st.subheader(format_results_summary(input_mode, len(df_res), primers_found))
                     st.dataframe(df_res)
                     
                     col1, col2 = st.columns(2)
