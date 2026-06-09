@@ -6,8 +6,24 @@ import sys
 from pathlib import Path
 
 from otp.genomes import list_genome_profiles
+from otp.web_commands import build_pipeline_command, build_redesign_command
 
 st.set_page_config(page_title="Cas-OFFinder V2 Designer", layout="wide")
+
+
+def read_uploaded_table(uploaded_file):
+    suffix = Path(uploaded_file.name).suffix.lower()
+    if suffix == ".csv":
+        return pd.read_csv(uploaded_file)
+    return pd.read_excel(uploaded_file)
+
+
+def save_uploaded_file(uploaded_file, out_dir: Path, stem: str) -> Path:
+    suffix = Path(uploaded_file.name).suffix.lower() or ".xlsx"
+    file_path = out_dir / f"{stem}{suffix}"
+    os.makedirs(out_dir, exist_ok=True)
+    file_path.write_bytes(uploaded_file.getvalue())
+    return file_path
 
 page = st.sidebar.radio("Page", ["Run Analysis", "使用指南"])
 
@@ -31,7 +47,7 @@ else:
     genome_profile = profile_labels[selected_profile_label]
     st.sidebar.caption(f"Data directory: data/{genome_profile.data_dir_name}")
 
-    input_mode = st.sidebar.radio("Input Mode", ["Single Query", "Batch (CSV)"])
+    input_mode = st.sidebar.radio("Input Mode", ["Single Query", "Batch (CSV)", "Existing OT Excel/CSV"])
 
     flank_len = st.sidebar.number_input("Flank Length", min_value=100, max_value=2000, value=500)
     amplicon_min = st.sidebar.number_input("Min Amplicon Size", min_value=50, max_value=2000, value=150)
@@ -40,12 +56,19 @@ else:
     threads = st.sidebar.number_input("Threads (CPU Cores)", min_value=1, max_value=32, value=3)
 
     query_file = None
+    existing_ot_file = None
     if input_mode == "Batch (CSV)":
         query_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
         if query_file:
             df_uploaded = pd.read_csv(query_file)
             st.write("Preview of Uploaded Data:")
             st.dataframe(df_uploaded.head())
+    elif input_mode == "Existing OT Excel/CSV":
+        existing_ot_file = st.sidebar.file_uploader("Upload OT Excel/CSV", type=["xlsx", "csv"])
+        if existing_ot_file:
+            df_existing_ot = read_uploaded_table(existing_ot_file)
+            st.write("Preview of Existing OT Data:")
+            st.dataframe(df_existing_ot.head())
     else:
         st.sidebar.subheader("Single Query Parameters")
         spacer = st.sidebar.text_input("Spacer (20nt)", "GAGTCCGAGCAGAAGAAGA")
@@ -59,33 +82,59 @@ else:
     if run_button:
         st.info("Running pipeline...")
         with st.spinner("Executing Cas-OFFinder and Primer3..."):
-            run_name = f"{genome_profile.key}_streamlit_run"
+            run_suffix = "existing_ot" if input_mode == "Existing OT Excel/CSV" else "streamlit_run"
+            run_name = f"{genome_profile.key}_{run_suffix}"
             out_dir = Path("runs") / run_name
-            
-            cmd = [
-                sys.executable, "-m", "otp.pipeline",
-                "--genome", genome_profile.key,
-                "--out", str(out_dir),
-                "--flank", str(flank_len),
-                "--amplicon_min", str(amplicon_min),
-                "--amplicon_max", str(amplicon_max),
-                "--topn", str(top_n),
-                "--threads", str(threads)
-            ]
-            
-            if input_mode == "Batch (CSV)" and query_file is not None:
+
+            if input_mode == "Existing OT Excel/CSV" and existing_ot_file is None:
+                st.error("Please upload an existing OT Excel/CSV file.")
+                st.stop()
+            if input_mode == "Batch (CSV)" and query_file is None:
+                st.error("Please upload a batch CSV file.")
+                st.stop()
+
+            if input_mode == "Existing OT Excel/CSV":
+                input_path = save_uploaded_file(existing_ot_file, out_dir, "existing_ot_input")
+                cmd = build_redesign_command(
+                    python_executable=sys.executable,
+                    genome_profile=genome_profile,
+                    input_path=input_path,
+                    out_dir=out_dir,
+                    flank=flank_len,
+                    amplicon_min=amplicon_min,
+                    amplicon_max=amplicon_max,
+                )
+            elif input_mode == "Batch (CSV)":
                 batch_path = out_dir / "batch_input.csv"
                 os.makedirs(out_dir, exist_ok=True)
                 df_uploaded.to_csv(batch_path, index=False)
-                cmd.extend(["--batch", str(batch_path)])
+                cmd = build_pipeline_command(
+                    python_executable=sys.executable,
+                    genome_profile=genome_profile,
+                    out_dir=out_dir,
+                    flank=flank_len,
+                    amplicon_min=amplicon_min,
+                    amplicon_max=amplicon_max,
+                    top_n=top_n,
+                    threads=threads,
+                    batch_path=batch_path,
+                )
             else:
-                cmd.extend([
-                    "--spacer", spacer,
-                    "--pam", pam,
-                    "--mismatches", str(mms),
-                    "--dna_bulge", str(dna_bulge),
-                    "--rna_bulge", str(rna_bulge)
-                ])
+                cmd = build_pipeline_command(
+                    python_executable=sys.executable,
+                    genome_profile=genome_profile,
+                    out_dir=out_dir,
+                    flank=flank_len,
+                    amplicon_min=amplicon_min,
+                    amplicon_max=amplicon_max,
+                    top_n=top_n,
+                    threads=threads,
+                    spacer=spacer,
+                    pam=pam,
+                    mismatches=mms,
+                    dna_bulge=dna_bulge,
+                    rna_bulge=rna_bulge,
+                )
                 
             try:
                 subprocess.run(cmd, check=True, capture_output=True, text=True, env={**os.environ, "PYTHONPATH": "src"})

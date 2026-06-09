@@ -41,6 +41,16 @@ GENOME_PROFILES: Dict[str, GenomeProfile] = {
         fasta_url="https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz",
         gtf_url="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_47/gencode.v47.annotation.gtf.gz",
     ),
+    "mm10": GenomeProfile(
+        key="mm10",
+        display_name="Mouse (mm10 / GRCm38)",
+        species="Mus musculus",
+        assembly="GRCm38 / mm10",
+        data_dir_name="mm10",
+        fasta_filename="mm10.fa",
+        fasta_url="https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/mm10.fa.gz",
+        gtf_url="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz",
+    ),
     "mm39": GenomeProfile(
         key="mm39",
         display_name="Mouse (mm39)",

@@ -6,7 +6,7 @@
 ## 🌟 核心特性
 
 - **多核并行与 GPU 加速**：支持多线程查表，如果有 OpenCL 环境，Cas-OFFinder 可自动开启 GPU 计算。
-- **多物种参考基因组**：支持人 `hg38`、小鼠 `mm39`、大鼠 `rn7 / GRCr8`、食蟹猴 `Macaca_fascicularis (Macaca_fascicularis_6.0)` 四种模式。
+- **多物种参考基因组**：支持人 `hg38`、小鼠 `mm10 / GRCm38`、小鼠 `mm39 / GRCm39`、大鼠 `rn7 / GRCr8`、食蟹猴 `Macaca_fascicularis (Macaca_fascicularis_6.0)` 五种模式。
 - **Cas-OFFinder V3 支持**：除常规错配（Mismatches）外，支持最新的 **DNA 凸起 (DNA Bulge)** 和 **RNA 凸起 (RNA Bulge)** 容错检索。
 - **靶向引物智能设计**：针对每个脱靶位点自动提取上游和下游侧翼序列，规避靶点区域 (额外 20bp 缓冲)，动态设计最优的扩增引物，并支持失败后的降级策略（放宽 Tm/GC 条件）。
 - **Docker 极速部署**：提供高度精简的 Docker 环境，只需克隆代码即可拥有所有底层编译好的环境。
@@ -25,6 +25,7 @@ offtarget_primer_tool/
 │   └── streamlit_app.py   # Streamlit 网页端入口
 ├── data/
 │   ├── hg38/
+│   ├── mm10/
 │   ├── mm39/
 │   ├── rn7/
 │   └── Macaca_fascicularis/
@@ -46,6 +47,10 @@ data/
 │   ├── hg38.fa
 │   ├── hg38.fa.fai
 │   └── annotation.sorted.gtf.gz
+├── mm10/
+│   ├── mm10.fa
+│   ├── mm10.fa.fai
+│   └── annotation.sorted.gtf.gz
 ├── mm39/
 │   ├── mm39.fa
 │   ├── mm39.fa.fai
@@ -65,6 +70,7 @@ data/
 ```bash
 source .venv/bin/activate
 python scripts/download_genomes.py --genome hg38
+python scripts/download_genomes.py --genome mm10
 python scripts/download_genomes.py --genome mm39
 python scripts/download_genomes.py --genome rn7
 python scripts/download_genomes.py --genome macaca_fascicularis
@@ -194,7 +200,7 @@ streamlit run app/streamlit_app.py
 ## 🧭 常见使用入口
 
 ### 1. Streamlit 网页端
-适合手工输入单条 sgRNA，或上传批量参数表后直接点击运行：
+适合手工输入单条 sgRNA、上传批量 sgRNA 参数表，或上传已有 OT Excel/CSV 后直接点击运行：
 
 ```bash
 source .venv/bin/activate
@@ -202,10 +208,11 @@ streamlit run app/streamlit_app.py
 ```
 
 默认参数说明：
-- `Genome` 可选择 `Human (hg38)`、`Mouse (mm39)`、`Rat (rn7 / GRCr8)`、`Macaca_fascicularis`
+- `Genome` 可选择 `Human (hg38)`、`Mouse (mm10 / GRCm38)`、`Mouse (mm39)`、`Rat (rn7 / GRCr8)`、`Macaca_fascicularis`
 - `Flank Length` 默认 `500`，表示脱靶位点上下游各截取 `500 bp`
 - Primer3 在目标区域两侧还会额外避让 `20 bp`
-- Streamlit 内部会自动复用当前 Python 解释器调用 `otp.pipeline`
+- `Batch (CSV)` 用于多条 sgRNA 查询，会调用 `otp.pipeline`
+- `Existing OT Excel/CSV` 用于已有脱靶位点表，会调用 `otp.redesign`
 - 页面左侧可切换到 `使用指南`，直接在 Web 页面中阅读本 README。
 
 ### 2. 命令行批量模式：从 sgRNA 参数表开始跑全流程
@@ -222,6 +229,7 @@ python -m otp.pipeline --batch input.xlsx --out runs/batch_run --threads 8
 
 ```bash
 python -m otp.pipeline --genome mm39 --batch input.xlsx --out runs/mouse_batch --threads 8
+python -m otp.pipeline --genome mm10 --batch input.xlsx --out runs/mouse_mm10_batch --threads 8
 python -m otp.pipeline --genome rn7 --batch input.xlsx --out runs/rat_batch --threads 8
 python -m otp.pipeline --genome macaca_fascicularis --batch input.xlsx --out runs/macaca_batch --threads 8
 ```
@@ -250,7 +258,7 @@ python -m otp.pipeline \
 ```bash
 source .venv/bin/activate
 python -m otp.redesign \
-  --genome hg38 \
+  --genome mm10 \
   --input your_offtargets.xlsx \
   --out runs/your_offtargets_redesign
 ```
@@ -282,6 +290,7 @@ otp-redesign \
 ```bash
 source .venv/bin/activate
 python -m otp.redesign \
+  --genome mm10 \
   --input sgRNA-ANGPTL3-EXON1-CAA4.xlsx \
   --out runs/sgRNA-ANGPTL3-EXON1-CAA4_legacy_export
 ```
@@ -289,7 +298,7 @@ python -m otp.redesign \
 ### 4. 什么时候走哪个入口
 - 如果输入是 sgRNA、PAM、mismatch 这些查询参数，用 `otp.pipeline --batch`
 - 如果输入已经是脱靶位点 Excel，用 `otp.redesign --input`
-- 如果想在浏览器里操作，用 Streamlit
+- 如果想在浏览器里操作，用 Streamlit；已有 OT 表请选择 `Existing OT Excel/CSV`
 
 ## 📊 输出结果说明
 

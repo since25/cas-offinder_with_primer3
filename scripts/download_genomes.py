@@ -27,8 +27,15 @@ def download(url: str, out_path: Path):
 
 def decompress_gzip(gz_path: Path, out_path: Path):
     print(f"Decompressing {gz_path} -> {out_path}", flush=True)
-    with gzip.open(gz_path, "rb") as src, open(out_path, "wb") as dest:
-        shutil.copyfileobj(src, dest)
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    try:
+        with gzip.open(gz_path, "rb") as src, open(tmp_path, "wb") as dest:
+            shutil.copyfileobj(src, dest)
+        tmp_path.replace(out_path)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        out_path.unlink(missing_ok=True)
+        raise
 
 
 def prepare_profile(profile: GenomeProfile, keep_gz: bool):

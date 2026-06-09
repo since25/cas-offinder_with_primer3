@@ -9,8 +9,9 @@ from otp.genomes import get_genome_profile, list_genome_profiles
 def test_requested_genome_profiles_are_available():
     profiles = {profile.key: profile for profile in list_genome_profiles()}
 
-    assert set(profiles) == {"hg38", "mm39", "rn7", "macaca_fascicularis"}
+    assert set(profiles) == {"hg38", "mm10", "mm39", "rn7", "macaca_fascicularis"}
     assert profiles["hg38"].display_name == "Human (hg38)"
+    assert profiles["mm10"].display_name == "Mouse (mm10 / GRCm38)"
     assert profiles["mm39"].display_name == "Mouse (mm39)"
     assert profiles["rn7"].display_name == "Rat (rn7 / GRCr8)"
     assert profiles["macaca_fascicularis"].display_name == "Macaca_fascicularis"
@@ -29,6 +30,17 @@ def test_genome_profile_paths_are_data_dir_scoped():
     assert profile.gtf_url.endswith(
         "Macaca_fascicularis.Macaca_fascicularis_6.0.115.gtf.gz"
     )
+
+
+def test_mm10_profile_uses_grcm38_assets():
+    profile = get_genome_profile("mm10")
+
+    assert profile.species == "Mus musculus"
+    assert profile.assembly == "GRCm38 / mm10"
+    assert profile.fasta_dir.name == "mm10"
+    assert profile.fasta_path == profile.fasta_dir / "mm10.fa"
+    assert profile.fasta_url.endswith("/goldenPath/mm10/bigZips/mm10.fa.gz")
+    assert profile.gtf_url.endswith("gencode.vM25.annotation.gtf.gz")
 
 
 def test_unknown_genome_profile_is_rejected():
