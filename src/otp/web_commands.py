@@ -97,6 +97,7 @@ def build_redesign_command(
     flank: int,
     amplicon_min: int,
     amplicon_max: int,
+    name_column: Optional[str] = None,
 ) -> list[str]:
     cmd = _base_pipeline_args(
         python_executable,
@@ -108,4 +109,6 @@ def build_redesign_command(
         amplicon_max,
     )
     cmd.extend(["--input", str(input_path)])
+    if name_column is not None:
+        cmd.extend(["--name-column", name_column])
     return cmd

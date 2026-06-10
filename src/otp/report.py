@@ -80,14 +80,14 @@ class ExportManager:
         # We assume df has all merged data.
         # Split fields based on rules
         offtarget_cols = [
-            'query_id', 'ot_no', 'spacer', 'pam', 'chrom', 'pos0', 'pos1', 'strand',
+            'query_id', 'ot_no', 'source_file', 'source_row', 'spacer', 'pam', 'chrom', 'pos0', 'pos1', 'strand',
             'mismatches', 'bulge_type', 'bulge_size', 'found_seq', 'query_seq',
             'target_len', 'flank_start0', 'flank_end0', 'offtarget_pos_in_flank0',
             'rank_score', 'rank_reason', 'gene_id', 'gene_name', 'feature', 'distance_to_gene'
         ]
         
         primer_cols = [
-            'query_id', 'ot_no', 'chrom', 'pos0', 'strand', 'mismatches', 'bulge_type', 'bulge_size',
+            'query_id', 'ot_no', 'source_file', 'source_row', 'chrom', 'pos0', 'strand', 'mismatches', 'bulge_type', 'bulge_size',
             'primer_left_seq', 'primer_right_seq', 'primer_left_tm', 'primer_right_tm',
             'primer_left_pos_in_flank0', 'primer_left_len',
             'primer_right_pos_in_flank0', 'primer_right_len',

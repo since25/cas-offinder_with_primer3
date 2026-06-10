@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from otp.genomes import list_genome_profiles
+from otp.redesign import infer_name_column
 from otp.web_commands import build_pipeline_command, build_redesign_command, format_results_summary
 
 st.set_page_config(page_title="Cas-OFFinder V2 Designer", layout="wide")
@@ -24,6 +25,11 @@ def save_uploaded_file(uploaded_file, out_dir: Path, stem: str) -> Path:
     os.makedirs(out_dir, exist_ok=True)
     file_path.write_bytes(uploaded_file.getvalue())
     return file_path
+
+
+def uploaded_file_stem(uploaded_file, fallback: str) -> str:
+    stem = Path(uploaded_file.name).stem.strip()
+    return stem or fallback
 
 page = st.sidebar.radio("Page", ["Run Analysis", "使用指南"])
 
@@ -57,6 +63,7 @@ else:
 
     query_file = None
     existing_ot_file = None
+    existing_ot_name_column = None
     if input_mode == "Batch (CSV)":
         query_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
         if query_file:
@@ -69,6 +76,19 @@ else:
             df_existing_ot = read_uploaded_table(existing_ot_file)
             st.write("Preview of Existing OT Data:")
             st.dataframe(df_existing_ot.head())
+            table_columns = [str(column) for column in df_existing_ot.columns]
+            inferred_name_column = infer_name_column(df_existing_ot)
+            name_column_options = ["Auto-detect", *table_columns, "Use file name"]
+            default_name_index = (
+                name_column_options.index(inferred_name_column)
+                if inferred_name_column in name_column_options
+                else 0
+            )
+            existing_ot_name_column = st.sidebar.selectbox(
+                "Name column",
+                name_column_options,
+                index=default_name_index,
+            )
     else:
         st.sidebar.subheader("Single Query Parameters")
         spacer = st.sidebar.text_input("Spacer (20nt)", "GAGTCCGAGCAGAAGAAGA")
@@ -94,7 +114,16 @@ else:
                 st.stop()
 
             if input_mode == "Existing OT Excel/CSV":
-                input_path = save_uploaded_file(existing_ot_file, out_dir, "existing_ot_input")
+                input_path = save_uploaded_file(
+                    existing_ot_file,
+                    out_dir,
+                    uploaded_file_stem(existing_ot_file, "existing_ot_input"),
+                )
+                name_column_arg = None
+                if existing_ot_name_column == "Use file name":
+                    name_column_arg = ""
+                elif existing_ot_name_column not in (None, "Auto-detect"):
+                    name_column_arg = existing_ot_name_column
                 cmd = build_redesign_command(
                     python_executable=sys.executable,
                     genome_profile=genome_profile,
@@ -103,6 +132,7 @@ else:
                     flank=flank_len,
                     amplicon_min=amplicon_min,
                     amplicon_max=amplicon_max,
+                    name_column=name_column_arg,
                 )
             elif input_mode == "Batch (CSV)":
                 batch_path = out_dir / "batch_input.csv"

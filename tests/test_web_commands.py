@@ -51,6 +51,24 @@ def test_existing_ot_command_targets_redesign_module():
     assert cmd[cmd.index("--genome") + 1] == "mm10"
 
 
+def test_existing_ot_command_passes_selected_name_column():
+    profile = get_genome_profile("mm10")
+
+    cmd = build_redesign_command(
+        python_executable="/venv/bin/python",
+        genome_profile=profile,
+        input_path=Path("runs/mm10_existing_ot/sgRNA-ANGPTL3-EXON2-AG9.xlsx"),
+        out_dir=Path("runs/mm10_existing_ot"),
+        flank=500,
+        amplicon_min=150,
+        amplicon_max=250,
+        name_column="脱靶位点编号",
+    )
+
+    assert "--name-column" in cmd
+    assert cmd[cmd.index("--name-column") + 1] == "脱靶位点编号"
+
+
 def test_existing_ot_summary_describes_processed_rows_not_new_hits():
     summary = format_results_summary(
         input_mode="Existing OT Excel/CSV",
