@@ -1,7 +1,10 @@
 from pathlib import Path
 
+import pandas as pd
+
 from otp.genomes import get_genome_profile
 from otp.web_commands import (
+    build_results_download_basename,
     build_pipeline_command,
     build_redesign_command,
     format_results_summary,
@@ -78,3 +81,66 @@ def test_existing_ot_summary_describes_processed_rows_not_new_hits():
 
     assert summary == "Existing OT rows processed: 319; primers designed: 319"
     assert "off-targets found" not in summary
+
+
+def test_existing_ot_download_name_uses_uploaded_file_stem():
+    basename = build_results_download_basename(
+        "Existing OT Excel/CSV",
+        existing_ot_filename="sgRNA-ANGPTL3-EXON2-AG9.xlsx",
+    )
+
+    assert basename == "sgRNA-ANGPTL3-EXON2-AG9_results"
+
+
+def test_single_query_download_name_uses_spacer_and_pam():
+    basename = build_results_download_basename(
+        "Single Query",
+        single_spacer="GAGTCCGAGCAGAAGAAGA",
+        single_pam="NGG",
+    )
+
+    assert basename == "GAGTCCGAGCAGAAGAAGANGG_results"
+
+
+def test_single_row_batch_download_name_prefers_id():
+    basename = build_results_download_basename(
+        "Batch (CSV)",
+        batch_filename="batch_input.csv",
+        batch_df=pd.DataFrame([
+            {
+                "id": "APOC3-NGG7",
+                "spacer": "GAGTCCGAGCAGAAGAAGA",
+                "pam": "NGG",
+            }
+        ]),
+    )
+
+    assert basename == "APOC3-NGG7_results"
+
+
+def test_single_row_batch_download_name_falls_back_to_sequence():
+    basename = build_results_download_basename(
+        "Batch (CSV)",
+        batch_filename="batch_input.csv",
+        batch_df=pd.DataFrame([
+            {
+                "spacer": "GAGTCCGAGCAGAAGAAGA",
+                "pam": "NGG",
+            }
+        ]),
+    )
+
+    assert basename == "GAGTCCGAGCAGAAGAAGANGG_results"
+
+
+def test_multi_row_batch_download_name_uses_uploaded_file_stem():
+    basename = build_results_download_basename(
+        "Batch (CSV)",
+        batch_filename="my batch input.csv",
+        batch_df=pd.DataFrame([
+            {"id": "APOC3-NGG7", "spacer": "GAGTCCGAGCAGAAGAAGA"},
+            {"id": "APOC3-NGG8", "spacer": "T" * 20},
+        ]),
+    )
+
+    assert basename == "my_batch_input_results"

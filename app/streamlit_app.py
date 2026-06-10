@@ -7,7 +7,12 @@ from pathlib import Path
 
 from otp.genomes import list_genome_profiles
 from otp.redesign import infer_name_column
-from otp.web_commands import build_pipeline_command, build_redesign_command, format_results_summary
+from otp.web_commands import (
+    build_pipeline_command,
+    build_redesign_command,
+    build_results_download_basename,
+    format_results_summary,
+)
 
 st.set_page_config(page_title="Cas-OFFinder V2 Designer", layout="wide")
 
@@ -114,6 +119,10 @@ else:
                 st.stop()
 
             if input_mode == "Existing OT Excel/CSV":
+                download_basename = build_results_download_basename(
+                    input_mode,
+                    existing_ot_filename=existing_ot_file.name,
+                )
                 input_path = save_uploaded_file(
                     existing_ot_file,
                     out_dir,
@@ -135,6 +144,11 @@ else:
                     name_column=name_column_arg,
                 )
             elif input_mode == "Batch (CSV)":
+                download_basename = build_results_download_basename(
+                    input_mode,
+                    batch_filename=query_file.name,
+                    batch_df=df_uploaded,
+                )
                 batch_path = out_dir / "batch_input.csv"
                 os.makedirs(out_dir, exist_ok=True)
                 df_uploaded.to_csv(batch_path, index=False)
@@ -150,6 +164,11 @@ else:
                     batch_path=batch_path,
                 )
             else:
+                download_basename = build_results_download_basename(
+                    input_mode,
+                    single_spacer=spacer,
+                    single_pam=pam,
+                )
                 cmd = build_pipeline_command(
                     python_executable=sys.executable,
                     genome_profile=genome_profile,
@@ -186,12 +205,12 @@ else:
                     if (plot_dir / "chr_dist.png").exists():
                         col2.image(str(plot_dir / "chr_dist.png"))
                         
-                    st.download_button("Download CSV", data=results_csv.read_text(), file_name="results.csv", mime="text/csv")
+                    st.download_button("Download CSV", data=results_csv.read_text(), file_name=f"{download_basename}.csv", mime="text/csv")
                     
                     excel_path = out_dir / "results.xlsx"
                     if excel_path.exists():
                         with open(excel_path, "rb") as f:
-                            st.download_button("Download Excel", data=f, file_name="results.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            st.download_button("Download Excel", data=f, file_name=f"{download_basename}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 else:
                     st.warning("No results.csv was generated. Possibly no off-targets matched.")
                     
