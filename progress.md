@@ -47,3 +47,25 @@ Changed files:
 
 Rollback:
 - Restore the CSV `st.download_button` in `app/streamlit_app.py`.
+
+## 2026-07-22 - Task: Record production deployment procedure
+
+### What was done
+
+- Recorded the production host, checkout, service unit, health check, and release procedure.
+- Recorded the two pre-existing production-only source changes that must be preserved during deployment.
+- Added the deployment result to the persistent Codex project memory.
+
+### Testing
+
+- Verified production commit `b550c8d`, service `cas-offinder-primer3.service`, port `8501`, and the Streamlit health response `ok` on `wang@192.168.7.10`.
+- Inspected the remote diffs for `src/otp/annotate.py` and `src/otp/cas_offinder.py` without modifying them.
+
+### Notes
+
+Changed files:
+- `docs/production-deployment.md`: documents the verified production deployment process.
+- `progress.md`: records the deployment evidence and preservation constraint.
+
+Rollback:
+- Remove the deployment documentation if the runtime layout is retired.
