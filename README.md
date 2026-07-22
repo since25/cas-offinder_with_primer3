@@ -213,6 +213,7 @@ streamlit run app/streamlit_app.py
 - Primer3 在目标区域两侧还会额外避让 `20 bp`
 - `Batch (CSV)` 用于多条 sgRNA 查询，会调用 `otp.pipeline`
 - `Existing OT Excel/CSV` 用于已有脱靶位点表，会调用 `otp.redesign`
+- 流程完成后，网页只提供 Excel 工作簿下载，保留 `offtargets`、`primers`、`legacy_primers` 和 `summary` 全部 Sheet。
 - 页面左侧可切换到 `使用指南`，直接在 Web 页面中阅读本 README。
 
 ### 2. 命令行批量模式：从 sgRNA 参数表开始跑全流程
@@ -284,6 +285,8 @@ otp-redesign \
 可选字段：
 - `#Bulge type` 或 `Bulge type`
 - `eff_pred`
+
+第一个完全空白行标记脱靶表结束，其后的内容会被忽略。表格主体中只要一行包含任意内容，就必须填写全部必填字段；缺少字段时命令会报出数据行和 Excel 行号。
 
 示例：
 

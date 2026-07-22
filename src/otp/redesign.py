@@ -46,6 +46,26 @@ def _has_text(value: object) -> bool:
     return pd.notna(value) and str(value).strip() != ""
 
 
+def _is_blank_row(row: pd.Series) -> bool:
+    return not any(_has_text(value) for value in row)
+
+
+def _rows_before_blank(df: pd.DataFrame):
+    for source_row, (_, row) in enumerate(df.iterrows(), start=1):
+        if _is_blank_row(row):
+            break
+        yield source_row, row
+
+
+def _validate_required_row_values(row: pd.Series, source_row: int) -> None:
+    missing = [column for column in REQUIRED_COLUMNS if not _has_text(row[column])]
+    if missing:
+        raise ValueError(
+            f"Input row {source_row} (Excel row {source_row + 1}) is missing required values: "
+            f"{', '.join(missing)}"
+        )
+
+
 def infer_name_column(df: pd.DataFrame) -> str | None:
     normalized_columns = {}
     for column in df.columns:
@@ -162,7 +182,8 @@ def redesign_from_table(
     designer = PrimerDesigner()
     query_id = in_path.stem
     results = []
-    for source_row, (_, row) in enumerate(df_in.iterrows(), start=1):
+    for source_row, row in _rows_before_blank(df_in):
+        _validate_required_row_values(row, source_row)
         mapped_row = _map_input_row(
             row,
             query_id,

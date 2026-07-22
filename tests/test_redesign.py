@@ -1,6 +1,7 @@
 import pandas as pd
+import pytest
 
-from otp.redesign import _map_input_row, infer_name_column
+from otp.redesign import _is_blank_row, _map_input_row, _rows_before_blank, _validate_required_row_values, infer_name_column
 
 
 def test_map_input_row_preserves_original_ot_number():
@@ -91,3 +92,34 @@ def test_map_input_row_falls_back_to_source_row_when_selected_name_is_blank():
 
     assert mapped["query_id"] == "hANGPTL3-mm10-OT_row_2"
     assert pd.isna(mapped["ot_no"]) or mapped["ot_no"] == ""
+
+
+def test_blank_row_marks_end_of_input_table():
+    df = pd.DataFrame([
+        {"crRNA": "first row"},
+        {"crRNA": None},
+        {"crRNA": "ignored footer"},
+    ])
+
+    assert _is_blank_row(df.iloc[1])
+    assert [(source_row, row["crRNA"]) for source_row, row in _rows_before_blank(df)] == [
+        (1, "first row"),
+    ]
+
+
+def test_partially_filled_row_reports_excel_row_and_missing_fields():
+    row = pd.Series({
+        "crRNA": "AAAGTCTGGATATAGAGAGTAGG",
+        "DNA": "AAAGTCTGGATATAGAGAGTAGG",
+        "Chromosome": "chr2",
+        "Position": None,
+        "Direction": "+",
+        "Mismatches": 3,
+        "Bulge Size": 0,
+    })
+
+    with pytest.raises(
+        ValueError,
+        match=r"Input row 7 \(Excel row 8\) is missing required values: Position",
+    ):
+        _validate_required_row_values(row, source_row=7)

@@ -205,12 +205,10 @@ else:
                     if (plot_dir / "chr_dist.png").exists():
                         col2.image(str(plot_dir / "chr_dist.png"))
                         
-                    st.download_button("Download CSV", data=results_csv.read_text(), file_name=f"{download_basename}.csv", mime="text/csv")
-                    
                     excel_path = out_dir / "results.xlsx"
                     if excel_path.exists():
                         with open(excel_path, "rb") as f:
-                            st.download_button("Download Excel", data=f, file_name=f"{download_basename}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            st.download_button("Download Excel Workbook", data=f, file_name=f"{download_basename}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 else:
                     st.warning("No results.csv was generated. Possibly no off-targets matched.")
                     
