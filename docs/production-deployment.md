@@ -19,9 +19,8 @@
 
 ## Preserved Server Changes
 
-As of 2026-07-22, the production checkout has two uncommitted changes that are outside the redesign and download fixes:
+As of 2026-07-22, the production checkout has one uncommitted source change:
 
-- `src/otp/annotate.py` enables `pyranges`, restoring GTF annotation that was previously disabled to avoid test memory pressure.
-- `src/otp/cas_offinder.py` passes `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` to CMake for compatibility with newer CMake releases.
+- `src/otp/annotate.py` enables `pyranges`, which attempts to load the full GTF into memory. Do not deploy it as-is: a production probe consumed about `7 GiB` and caused a host OOM event.
 
-Keep these changes during a fast-forward release unless they have been separately reviewed and committed.
+Keep this change during a fast-forward release until a low-memory annotation design has been reviewed and committed. The CMake compatibility flag in `src/otp/cas_offinder.py` was separately verified and is now tracked in the repository.

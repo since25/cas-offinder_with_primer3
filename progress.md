@@ -69,3 +69,28 @@ Changed files:
 
 Rollback:
 - Remove the deployment documentation if the runtime layout is retired.
+
+## 2026-07-22 - Task: Track the CMake compatibility fix
+
+### What was done
+
+- Added the verified CMake policy compatibility flag to the tracked Cas-OFFinder fallback build path.
+- Added a regression test for the exact CMake invocation.
+- Recorded that the separate pyranges change is unsafe to deploy because full-GTF loading caused a production memory exhaustion event.
+
+### Testing
+
+- `PYTHONPATH="$PWD/src:$PWD/.venv/lib/python3.14/site-packages" python3 -m pytest tests/test_cas_offinder.py -q`: 1 passed.
+- `PYTHONPATH="$PWD/src:$PWD/.venv/lib/python3.14/site-packages" python3 -m pytest -q`: 39 passed.
+- Temporary CMake build with `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`: completed successfully.
+
+### Notes
+
+Changed files:
+- `src/otp/cas_offinder.py`: uses the CMake policy compatibility flag during fallback builds.
+- `tests/test_cas_offinder.py`: covers the fallback CMake invocation.
+- `docs/production-deployment.md`: records the reviewed status of the two remote changes.
+- `progress.md`: records this merge decision and verification evidence.
+
+Rollback:
+- Remove `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` from the fallback CMake command.

@@ -37,7 +37,11 @@ def ensure_cas_offinder() -> str:
     try:
         build_dir = repo_dir / "build"
         os.makedirs(build_dir, exist_ok=True)
-        subprocess.run(["cmake", "-G", "Unix Makefiles", ".."], cwd=str(build_dir), check=True)
+        subprocess.run(
+            ["cmake", "-G", "Unix Makefiles", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5", ".."],
+            cwd=str(build_dir),
+            check=True
+        )
         subprocess.run(["make"], cwd=str(build_dir), check=True)
         
         # After build, cas-offinder is usually located at build/cas-offinder
